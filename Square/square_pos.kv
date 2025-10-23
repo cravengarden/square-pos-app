@@ -1,0 +1,48 @@
+<POSLayout>:
+    orientation: "vertical"
+    padding: "12dp"
+    spacing: "12dp"
+
+    MDLabel:
+        text: "Select Customer"
+        font_style: "H5"
+        halign: "center"
+        size_hint_y: None
+        height: self.texture_size[1]
+
+    RecycleView:
+        id: customer_list
+        viewclass: "CustomerButton"
+
+        RecycleBoxLayout:
+            default_size: None, dp(56)
+            default_size_hint: 1, None
+            size_hint_y: None
+            height: self.minimum_height
+            orientation: "vertical"
+
+
+    MDTextField:
+        id: amount_input
+        hint_text: "Enter Amount (£)"
+        text: root.amount_pounds
+        font_size: "18sp"
+        input_filter: "float"
+        helper_text: "Enter payment amount"
+        helper_text_mode: "on_focus"
+        on_text: root.amount_pounds = self.text
+
+    MDRaisedButton:
+        text: "Take Payment"
+        pos_hint: {"center_x": 0.5}
+        size_hint_x: 0.8
+        md_bg_color: (0.2, 0.6, 1, 1)
+        on_release: root.take_payment()
+
+<CustomerButton@MDFlatButton>:
+    text: ""
+    md_bg_color: (0.2, 0.6, 1, 1) if self.text == app.root.selected_customer else (0.1, 0.1, 0.1, 1)
+    theme_text_color: "Custom"
+    text_color: (1, 1, 1, 1)
+    on_release: app.root.set_customer(self.text)
+
