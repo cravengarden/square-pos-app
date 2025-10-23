@@ -1,5 +1,6 @@
 import streamlit as st
 from square.client import Client
+import streamlit as st
 
 # had to use squareup==23.0.0.20221019 as the newer version didn't
 # have square.client. This version doesn't have BearerAuthCredentials
@@ -8,14 +9,18 @@ from square.client import Client
 #from square.http.auth.o_auth_2 import BearerAuthCredentials
 
 # --- Square setup ---
-ACCESS_TOKEN = "EAAAl8DSm1md8YXgsQA7HDRLxa6_W8t10fZGSnWWR_SGT2LjvV9fBilVVUZRMYSr"
-LOCATION_ID = "LRV35JXF9C7QR"
+#ACCESS_TOKEN = "My access"
+#LOCATION_ID = "My location"
 #credentials = BearerAuthCredentials(access_token=ACCESS_TOKEN)
 
 #client = Client(
 #    bearer_auth_credentials=credentials,
 #    environment="production"  # or "sandbox"
 #)
+
+ACCESS_TOKEN = st.secrets["SQUARE_ACCESS_TOKEN"]
+LOCATION_ID = st.secrets["SQUARE_LOCATION_ID"]
+
 client = Client(
     environment='production',  # or 'sandbox'
     access_token=ACCESS_TOKEN
