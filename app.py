@@ -1,5 +1,8 @@
 import streamlit as st
 from square.client import Client
+import os
+import urllib.parse
+import subprocess
 
 # had to use squareup==23.0.0.20221019 as the newer version didn't
 # have square.client. This version doesn't have BearerAuthCredentials
@@ -8,7 +11,8 @@ from square.client import Client
 #from square.http.auth.o_auth_2 import BearerAuthCredentials
 
 # --- Square setup ---
-ACCESS_TOKEN = "EAAAl8DSm1md8YXgsQA7HDRLxa6_W8t10fZGSnWWR_SGT2LjvV9fBilVVUZRMYSr"
+#ACCESS_TOKEN = "EAAAl8DSm1md8YXgsQA7HDRLxa6_W8t10fZGSnWWR_SGT2LjvV9fBilVVUZRMYSr"
+ACCESS_TOKEN = os.getenv("SQUARE_ACCESS_TOKEN") or st.secrets.get("SQUARE_ACCESS_TOKEN")
 LOCATION_ID = "LRV35JXF9C7QR"
 #credentials = BearerAuthCredentials(access_token=ACCESS_TOKEN)
 
@@ -63,12 +67,51 @@ if amount_str and amount_pounds <= 0:
     st.warning("Please enter a valid amount greater than 0.")
 
 # ---------- Payment Simulation ----------
+#if st.button("Send to Square POS"):
+#    if "(no customers" in selected_customer or "(Error" in selected_customer:
+#        st.warning("Please select a valid customer.")
+#    elif amount_pounds <= 0:
+#        st.warning("Please enter a valid amount.")
+#    else:
+#        amount_pennies = int(amount_pounds * 100)
+#        st.success(f"✅ Would launch Square POS for {selected_customer} - £{amount_pounds:.2f}")
+#        st.info(f"(Intent URI would be generated for Android launch.)")
+# ---------- Payment Handling ----------
+
+ACCESS_TOKEN = os.getenv("SQUARE_ACCESS_TOKEN") or st.secrets.get("SQUARE_ACCESS_TOKEN")
+
 if st.button("Send to Square POS"):
     if "(no customers" in selected_customer or "(Error" in selected_customer:
         st.warning("Please select a valid customer.")
     elif amount_pounds <= 0:
-        st.warning("Please enter a valid amount.")
+        st.warning("Please enter a valid amount greater than 0.")
     else:
         amount_pennies = int(amount_pounds * 100)
-        st.success(f"✅ Would launch Square POS for {selected_customer} - £{amount_pounds:.2f}")
-        st.info(f"(Intent URI would be generated for Android launch.)")
+
+        # Build the Square POS intent URI
+        intent_uri = (
+            f"intent:#Intent;"
+            f"action=com.squareup.pos.action.CHARGE;"
+            f"package=com.squareup;"
+            f"S.com.squareup.pos.CLIENT_ID={ACCESS_TOKEN};"
+            f"S.com.squareup.pos.REQUEST_METADATA={selected_customer};"
+            f"S.com.squareup.pos.NOTE=Invoice payment;"
+            f"i.com.squareup.pos.TOTAL_AMOUNT={amount_pennies};"
+            f"S.com.squareup.pos.CURRENCY_CODE=GBP;"
+            f"end"
+        )
+
+        # Try launching Square POS (will only work on Android)
+        try:
+            subprocess.run(
+                ["am", "start", "-a", "android.intent.action.VIEW", "-d", intent_uri],
+                check=True,
+            )
+            st.success(f"💳 Launched Square POS for {selected_customer} - £{amount_pounds:.2f}")
+        except Exception as e:
+            # If not on Android or any error occurs
+            #st.info(f"Would launch Square POS for {selected_customer} - £{amount_pounds:.2f}")
+            #st.warning(f"(Simulated mode only — Android intent not available here.)")
+            st.success(f"✅ Would launch Square POS for {selected_customer} - £{amount_pounds:.2f}")
+            st.text_area("Intent URI (for debugging / Android use):", intent_uri, height=120)
+            st.warning("(Simulated mode only — Android intent not available here.)")
