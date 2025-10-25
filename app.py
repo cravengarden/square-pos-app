@@ -102,16 +102,40 @@ if st.button("Send to Square POS"):
         )
 
         # Try launching Square POS (will only work on Android)
-        try:
-            subprocess.run(
-                ["am", "start", "-a", "android.intent.action.VIEW", "-d", intent_uri],
-                check=True,
-            )
-            st.success(f"💳 Launched Square POS for {selected_customer} - £{amount_pounds:.2f}")
-        except Exception as e:
-            # If not on Android or any error occurs
-            #st.info(f"Would launch Square POS for {selected_customer} - £{amount_pounds:.2f}")
-            #st.warning(f"(Simulated mode only — Android intent not available here.)")
-            st.success(f"✅ Would launch Square POS for {selected_customer} - £{amount_pounds:.2f}")
-            st.text_area("Intent URI (for debugging / Android use):", intent_uri, height=120)
-            st.warning("(Simulated mode only — Android intent not available here.)")
+#        try:
+#            subprocess.run(
+#                ["am", "start", "-a", "android.intent.action.VIEW", "-d", intent_uri],
+#                check=True,
+#            )
+#            st.success(f"💳 Launched Square POS for {selected_customer} - £{amount_pounds:.2f}")
+#        except Exception as e:
+#            # If not on Android or any error occurs
+#            #st.info(f"Would launch Square POS for {selected_customer} - £{amount_pounds:.2f}")
+#            #st.warning(f"(Simulated mode only — Android intent not available here.)")
+#            st.success(f"✅ Would launch Square POS for {selected_customer} - £{amount_pounds:.2f}")
+#            st.text_area("Intent URI (for debugging / Android use):", intent_uri, height=120)
+#            st.warning("(Simulated mode only — Android intent not available here.)")
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+        import time
+
+        # Initialize Firebase (only once)
+        if not firebase_admin._apps:
+            cred = credentials.Certificate("firebase-key.json")  # path to your service account JSON
+            firebase_admin.initialize_app(cred)
+
+        db = firestore.client()
+
+        # Instead of trying to launch directly, log the intent for Android to process
+        transaction = {
+            "member": selected_customer,
+            "amount": float(amount_pounds),
+            "intent_uri": intent_uri,
+            "timestamp": time.time(),
+            "pending": True,
+        }
+        db.collection("transactions").add(transaction)
+
+        st.success(f"📡 Sent transaction for {selected_customer} - £{amount_pounds:.2f}")
+        st.text_area("Intent URI (for debugging):", intent_uri, height=120)
+        st.warning("Awaiting Android listener to launch Square POS.")
